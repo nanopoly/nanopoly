@@ -1,2 +1,3 @@
 # nanopoly
-a minimalist polyglot toolkit for building fast, decentralized, scalable and fault tolerant microservices
+
+a minimalist polyglot toolkit for building fast, scalable and fault tolerant microservices
