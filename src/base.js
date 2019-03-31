@@ -28,7 +28,7 @@ class Base {
         if (is.object(options) && is.not.array(options))
             this.options = Object.assign(this.options, options);
 
-        this.logger = pino({ level: this.options.logs });
+        this.logger = pino({ level: this.options.log || this.options.logs });
         if (is.string(this.options.group)) this.options.group = this.options.group.split(' ');
         else if (!this.options.group) this.options.group = [ this.options.name || 'nanopoly' ];
         if (is.not.object(this.options.redis) || is.not.function(this.options.redis.publish))
