@@ -37,6 +37,7 @@ class Client extends Base {
                     socket._since = Date.now();
                     socket.handle('error', e => this.logger.error(e));
                     socket.handle(this.__onMessage.bind(this));
+                    socket.connect(data.p, data.i);
                     this._services[service][data._] = socket;
                 } else this._services[service][data._]._since = Date.now();
             }
@@ -78,30 +79,34 @@ class Client extends Base {
         if (!this._services.hasOwnProperty(service)) throw new NanopolyError('INVALID_SERVICE');
 
         const sockets = Object.keys(this._services[service]);
-        if (!sockets.length) throw new NanopolyError('EMPTY_SERVICE');
+        if (!sockets.length) throw new NanopolyError('INVALID_SERVICE');
 
         return this._services[service][sockets[Math.floor(Math.random() * sockets.length)]];
     }
 
-    __parseMessage(message) {
-        try {
-            const payload = JSON.parse(message);
-            if (!payload || is.not.string(payload._) || is.not.existy(payload.d))
-                return { _: '_' };
-            return payload;
-        } catch (error) {
-            return {};
-        }
-    }
-
     __onMessage(payload) {
-        let { _: id, d: response } = this.__parseMessage(payload);
+        let { _: id, d: data } = this.__parseMessage(payload);
         if (this._messages.hasOwnProperty(id)) {
             if (this._messages[id].t) clearTimeout(this._messages[id].t);
-            if (is.existy(response) && is.not.string(response)) this._messages[id].c(response);
-            else this._messages[id].c(is.string(response) ?
-                new NanopolyError(response) : new NanopolyError('INVALID_RESPONSE'));
-            delete this._messages[id];
+            if (!data || is.not.existy(data) || is.string(data)) {
+                this._messages[id].c(is.string(data) ?
+                    new NanopolyError(data) : new NanopolyError('EMPTY_RESPONSE'));
+            }
+
+            try {
+                const r = this._messages[id].c(data, () => {
+                    if (this._messages.hasOwnProperty(id)) delete this._messages[id];
+                });
+                if (r instanceof Promise)
+                    r.catch(e => {
+                        if (this._messages.hasOwnProperty(id)) delete this._messages[id];
+                        this.logger.error(e);
+                    });
+                if (this._messages.hasOwnProperty(id)) delete this._messages[id];
+            } catch (e) {
+                if (this._messages.hasOwnProperty(id)) delete this._messages[id];
+                this.logger.error(e);
+            }
         }
     }
 
@@ -113,10 +118,10 @@ class Client extends Base {
         return id;
     }
 
-    send(path, payload, cb) {
+    send(path, data, cb) {
         if (is.not.string(path) || is.empty(path)) return cb(new NanopolyError('INVALID_PATH'));
 
-        if (is.not.function(cb)) cb = function() {};
+        if (is.not.function(cb)) cb = function(d, fn) { fn(); };
         const service = path.split(this.options.delimiter);
         if (service.length < 2) return cb(new NanopolyError('MISSING_METHOD'));
         else if (!service[1] || is.empty(service[1]) || service[1].charAt(0) === '_')
@@ -127,17 +132,19 @@ class Client extends Base {
             const id = this.__generateMessage();
             this._messages[id]._ = socket._id;
             this._messages[id].c = cb;
+            this._messages[id].p = path;
+            this._messages[id].d = data;
 
             // ? is timeout enabled
             if (is.number(this.options.timeout) && this.options.timeout > 0)
                 this._messages[id].t = setTimeout(() => {
                     if (!this._messages.hasOwnProperty(id)) return;
 
-                    delete this._messages[id];
+                    delete this._messages[id]; // TODO: implement retry via p and d parameters
                     cb(new NanopolyError('REQUEST_TIMEOUT'));
                 }, this.options.timeout);
 
-            socket.send({ _: id, p: path, d: payload });
+            socket.send({ _: id, p: path, d: data });
         } catch(e) {
             this.logger.error(e);
             cb(e);
