@@ -17,7 +17,7 @@ class Server extends Base {
             throw new NanopolyError('services must be an instance of service manager');
 
         this._started = false;
-        this._services = serviceManager;
+        this.serviceManager = serviceManager;
         this._socket = new ZMQ();
         this._socket.handle('bind', () => this.__broadcast());
         this._socket.handle('error', e => this.logger.error(e));
@@ -30,7 +30,7 @@ class Server extends Base {
             this.logger.error(error);
             if (is.not.function(cb)) cb = () => {};
             return cb(error);
-        } else if (this._services.isEmpty()) {
+        } else if (this.serviceManager.isEmpty()) {
             const error = new NanopolyError('no service added');
             this.logger.error(error);
             if (is.not.function(cb)) cb = () => {};
@@ -52,7 +52,7 @@ class Server extends Base {
     __parseMessage(message) {
         try {
             const payload = JSON.parse(message);
-            if (is.not.object(payload) || is.not.existy(payload.p) || is.not.existy(payload.d))
+            if (!payload || is.not.string(payload._) || is.not.string(payload.p) || is.not.existy(payload.d))
                 return {};
             return payload;
         } catch (error) {
@@ -61,34 +61,37 @@ class Server extends Base {
     }
 
     __onMessage(payload) {
-        let { p: path, d: data } = this.__parseMessage(payload);
-        path = is.string(path) ? path.split(this.options.delimiter || '.') : [];
-        const service = path.shift(), method = path.shift();
-        if (!this._services.hasService(service)) {
-            if (service === this.cmd.CLEAN_SHUTDOWN)
-                this.shutdown();
-            else this._socket.send('INVALID_SERVICE');
-        } else {
-            const handler = this._services.getService(service, method);
-            if (is.function(handler)) {
-                try {
-                    const p = handler(data, r =>
-                        this._socket.send(r instanceof Error ? r.message : r));
-                    if (p instanceof Promise)
-                        p.catch(e => this._socket.send(e.message));
-                } catch (e) {
-                    this._socket.send(e.message);
-                }
-            } else this._socket.send('INVALID_METHOD');
-        }
+        let { _: id, d: data, p: path } = this.__parseMessage(payload);
+        if (is.string(id)) {
+            path = is.string(path) ? path.split(this.options.delimiter || '.') : [];
+            const service = path.shift(), method = path.shift();
+            if (!this.serviceManager.hasService(service)) {
+                if (service === this.cmd.CLEAN_SHUTDOWN)
+                    this.shutdown();
+                else this._socket.send({ _: id, d: 'INVALID_SERVICE' });
+            } else {
+                const handler = this.serviceManager.getService(service, method);
+                if (is.function(handler)) {
+                    try {
+                        const p = handler(data, r =>
+                            this._socket.send({ _: id, d: r instanceof Error ? r.message : r }));
+                        if (p instanceof Promise)
+                            p.catch(e => this._socket.send({ _: id, d: e.message }));
+                    } catch (e) {
+                        this._socket.send({ _: id, d: e.message });
+                    }
+                } else this._socket.send({ _: id, d: 'INVALID_METHOD' });
+            }
+        } else  this._socket.send({ _: id, d: 'INVALID_MESSAGE' });
     }
 
     __payload() {
         try {
             return JSON.stringify({
+                _: this._socket._id,
                 i: localIP(this.options.iface),
                 p: this.options.port,
-                s: Object.keys(this._services)
+                s: Object.keys(this.serviceManager._services)
             });
         } catch (e) {
             this.logger.error(e);
@@ -105,16 +108,17 @@ class Server extends Base {
     __broadcast() {
         this.logger.info(`#${ this.options.port } is up and running`);
         if (this.broadcast) clearInterval(this.broadcast);
-        this.broadcast = setInterval(() => this.__interval.bind(this), this.options.interval);
+        this.__interval();
+        this.broadcast = setInterval(this.__interval.bind(this), this.options.interval);
     }
 
     shutdown() {
-        if (this.broadcast) clearInterval(this.broadcast);
         this._socket.disconnect();
+        if (this.broadcast) clearInterval(this.broadcast);
         if (is.array(this.options.group))
             for (let group of this.options.group)
                 this.options.redis.publish(`down-${ group }`, this.__payload());
-        setTimeout(() => this.options.redis.disconnect(), this.options.interval);
+        this.options.redis.disconnect();
     }
 }
 
