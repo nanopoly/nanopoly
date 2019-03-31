@@ -25,15 +25,14 @@ class Server extends Base {
     }
 
     async start(cb) {
+        if (is.not.function(cb)) cb = () => {};
         if (this._started) {
             const error = new NanopolyError(`already started on #${ this.options.port }`);
             this.logger.error(error);
-            if (is.not.function(cb)) cb = () => {};
             return cb(error);
         } else if (this.serviceManager.isEmpty()) {
             const error = new NanopolyError('no service added');
             this.logger.error(error);
-            if (is.not.function(cb)) cb = () => {};
             return cb(error);
         }
 
@@ -45,24 +44,13 @@ class Server extends Base {
             this._socket.connect(this.options.port);
         } catch (error) {
             this.logger.error(error);
-            if (is.function(cb)) cb(error);
-        }
-    }
-
-    __parseMessage(message) {
-        try {
-            const payload = JSON.parse(message);
-            if (!payload || is.not.string(payload._) || is.not.string(payload.p) || is.not.existy(payload.d))
-                return {};
-            return payload;
-        } catch (error) {
-            return {};
+            cb(error);
         }
     }
 
     __onMessage(payload) {
         let { _: id, d: data, p: path } = this.__parseMessage(payload);
-        if (is.string(id)) {
+        if (is.string(id) && is.string(path)) {
             path = is.string(path) ? path.split(this.options.delimiter || '.') : [];
             const service = path.shift(), method = path.shift();
             if (!this.serviceManager.hasService(service)) {
