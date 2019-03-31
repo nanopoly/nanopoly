@@ -36,6 +36,21 @@ class Base {
     }
 
     /**
+     * @description converts JSON string to javascript object
+     * @param {string} message payload
+     * @returns {object}
+     * @memberof Base
+     */
+    __parseMessage(message) {
+        try {
+            const payload = JSON.parse(message.toString());
+            return payload && is.object(payload) && is.not.empty(payload) ? payload : {};
+        } catch (error) {
+            return {};
+        }
+    }
+
+    /**
      * @description returns service name
      * @param {function} service    service class
      * @returns {string}
