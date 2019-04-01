@@ -1,8 +1,7 @@
 'use strict';
 
-const Redis = require('ioredis');
-
 const Client = require('../src/client');
+const Redis = require('ioredis');
 const Server = require('../src/server');
 const ServiceManager = require('../src/service-manager');
 
@@ -25,7 +24,7 @@ describe('health tests', () => {
         server.start();
     });
 
-    test('service availability', async done => {
+    test('service response', async done => {
         setTimeout(() => {
             const msg = { n: `#${ Math.floor(Math.random() * 1000) }` };
             client.send('service.echo', msg, async (r) => {
