@@ -17,6 +17,9 @@ class ServiceManager {
         if (is.not.function(service)) throw new ServiceError(service);
 
         const name = Base.__fixServiceName(service);
+        if (this._services.hasOwnProperty(name))
+            throw new NanopolyError('service already exists');
+
         this._services[name] = service;
     }
 
