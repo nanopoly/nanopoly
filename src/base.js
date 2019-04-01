@@ -22,7 +22,6 @@ class Base {
             iface: 'eth0',
             interval: 3000,
             logs: 'info',
-            name: 'nanopoly',
             port: 8000
         };
         if (is.object(options) && is.not.array(options))
@@ -30,7 +29,7 @@ class Base {
 
         this.logger = pino({ level: this.options.log || this.options.logs });
         if (is.string(this.options.group)) this.options.group = this.options.group.split(' ');
-        else if (!this.options.group) this.options.group = [ this.options.name || 'nanopoly' ];
+        else if (!this.options.group) this.options.group = [ 'nanopoly' ];
         if (is.not.object(this.options.redis) || is.not.function(this.options.redis.publish))
             throw new NanopolyError('redis must be an instance of a redis client');
     }

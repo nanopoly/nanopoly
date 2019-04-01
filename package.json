@@ -1,6 +1,6 @@
 {
   "name": "nanopoly",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "a minimalist polyglot toolkit for building fast, decentralized, scalable and fault tolerant microservices",
   "main": "index.js",
   "scripts": {
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/umuplus/nanopoly.git"
+    "url": "git+https://github.com/nanopoly/nanopoly.git"
   },
   "keywords": [
     "microservices",
@@ -26,9 +26,9 @@
   "author": "Umut Aydin",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/umuplus/nanopoly/issues"
+    "url": "https://github.com/nanopoly/nanopoly/issues"
   },
-  "homepage": "https://github.com/umuplus/nanopoly#readme",
+  "homepage": "https://github.com/nanopoly/nanopoly#readme",
   "devDependencies": {
     "eslint": "^5.15.3",
     "eslint-config-airbnb-base": "^13.1.0",
