@@ -88,52 +88,64 @@ class Client extends Base {
         let { _: id, d: data } = this.__parseMessage(payload);
         if (this._messages.hasOwnProperty(id)) {
             if (this._messages[id].t) clearTimeout(this._messages[id].t);
-            if (!data || is.not.existy(data) || is.string(data)) {
-                this._messages[id].c(is.string(data) ?
-                    new NanopolyError(data) : new NanopolyError('EMPTY_RESPONSE'));
-            }
+            if (!data || is.string(data)) data = is.string(data) ?
+                new NanopolyError(data) : new NanopolyError('EMPTY_RESPONSE');
 
-            try {
-                const r = this._messages[id].c(data, () => {
-                    if (this._messages.hasOwnProperty(id)) delete this._messages[id];
-                });
-                if (r instanceof Promise)
-                    r.catch(e => {
-                        if (this._messages.hasOwnProperty(id)) delete this._messages[id];
-                        this.logger.error(e);
-                    });
-                if (this._messages.hasOwnProperty(id)) delete this._messages[id];
-            } catch (e) {
-                if (this._messages.hasOwnProperty(id)) delete this._messages[id];
-                this.logger.error(e);
-            }
+            this.__reply(id, data);
         }
     }
 
-    __generateMessage() {
+    __reply(id, data) {
+        try {
+            const r = this._messages[id].c(data, () => {
+                if (this._messages.hasOwnProperty(id)) delete this._messages[id];
+            });
+            if (r instanceof Promise)
+                r.then(() => {
+                    if (this._messages.hasOwnProperty(id)) delete this._messages[id];
+                }).catch(e => {
+                    if (this._messages.hasOwnProperty(id)) delete this._messages[id];
+                    this.logger.error(e);
+                });
+            else if (this._messages.hasOwnProperty(id)) delete this._messages[id];
+        } catch (e) {
+            if (this._messages.hasOwnProperty(id)) delete this._messages[id];
+            this.logger.error(e);
+        }
+    }
+
+    __interval() {
+        for (let id of Object.keys(this._messages)) {
+            if (this._messages[id].t) clearTimeout(this._messages[id].t);
+            this.__reply(id, new NanopolyError('MESSAGE_EXPIRED'));
+        }
+    }
+
+    __flush() {
+        if (this.flush) clearInterval(this.flush);
+        this.flush = setInterval(this.__interval.bind(this), this.options.interval);
+    }
+
+    __generateMessage(_, path, data, cb) {
         const id = shortid.generate();
         if (this._messages.hasOwnProperty(id)) return this.__generateMessage();
 
-        this._messages[id] = { d: Date.now() };
+        this._messages[id] = { _, ts: Date.now(), p: path, d: data, c: cb };
         return id;
     }
 
     send(path, data, cb) {
-        if (is.not.string(path) || is.empty(path)) return cb(new NanopolyError('INVALID_PATH'));
+        if (is.not.function(cb)) cb = function() {};
+        if (is.not.string(path) || is.empty(path)) return cb(new NanopolyError('INVALID_PATH'), () => {});
 
-        if (is.not.function(cb)) cb = function(d, fn) { fn(); };
         const service = path.split(this.options.delimiter);
-        if (service.length < 2) return cb(new NanopolyError('MISSING_METHOD'));
+        if (service.length < 2) return cb(new NanopolyError('MISSING_METHOD'), () => {});
         else if (!service[1] || is.empty(service[1]) || service[1].charAt(0) === '_')
-            return cb(new NanopolyError('INVALID_METHOD'));
+            return cb(new NanopolyError('INVALID_METHOD'), () => {});
 
         try {
             const socket = this.__getSocket(service[0]);
-            const id = this.__generateMessage();
-            this._messages[id]._ = socket._id;
-            this._messages[id].c = cb;
-            this._messages[id].p = path;
-            this._messages[id].d = data;
+            const id = this.__generateMessage(socket._id, path, data, cb);
 
             // ? is timeout enabled
             if (is.number(this.options.timeout) && this.options.timeout > 0)
@@ -147,8 +159,29 @@ class Client extends Base {
             socket.send({ _: id, p: path, d: data });
         } catch(e) {
             this.logger.error(e);
-            cb(e);
+            cb(e, () => {});
         }
+    }
+
+    shutdown(remote) {
+        for (let service in this._services) {
+            for (let id in this._services[service]) {
+                try {
+                    if (remote) this._services[service][id]
+                        .send({ _: '!', p: this.cmd.CLEAN_SHUTDOWN, d: true });
+                    this._services[service][id].disconnect();
+                } catch (e) {
+                    this.logger.error(e);
+                }
+            }
+        }
+
+        for (let id in this._messages) {
+            if (this._messages[id].t) clearTimeout(this._messages[id].t);
+            if (this._messages.hasOwnProperty(id)) delete this._messages[id];
+        }
+
+        this.options.redis.unsubscribe(() => this.options.redis.disconnect()); // ! callback exists?
     }
 }
 
