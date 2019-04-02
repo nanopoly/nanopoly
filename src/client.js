@@ -128,6 +128,7 @@ class Client extends Base {
 
     __generateMessage(_, path, data, cb) {
         const id = shortid.generate();
+        // TODO: replace this implementation with an ordered queue
         if (this._messages.hasOwnProperty(id)) return this.__generateMessage();
 
         this._messages[id] = { _, ts: Date.now(), p: path, d: data, c: cb };

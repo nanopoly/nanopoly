@@ -1,10 +1,10 @@
 {
   "name": "nanopoly",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "a minimalist polyglot toolkit for building fast, decentralized, scalable and fault tolerant microservices",
   "main": "index.js",
   "scripts": {
-    "test": "jest"
+    "test": "./node_modules/jest/bin/jest.js"
   },
   "repository": {
     "type": "git",
