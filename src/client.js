@@ -6,7 +6,17 @@ const Base = require('./base');
 const ZMQ = require('./zmq');
 const { NanopolyError } = require('./errors');
 
+/**
+ * @description This class is resposible for managing client sockets for each server instance
+ * @class Client
+ * @extends {Base}
+ */
 class Client extends Base {
+    /**
+     *Creates an instance of Client.
+     * @param {object} options
+     * @memberof Client
+     */
     constructor(options) {
         super(options || {});
 
@@ -26,6 +36,11 @@ class Client extends Base {
                 this.options.redis.subscribe(`up-${ group }`, `down-${ group }`);
     }
 
+    /**
+     * @description handler for living sockets
+     * @param {object} data payload
+     * @memberof Client
+     */
     __serviceFound(data) {
         if (is.object(data) && is.string(data._) && is.string(data.i) && is.number(data.p) && is.array(data.s)) {
             this.logger.info({ s: 'found', d: data });
@@ -46,6 +61,11 @@ class Client extends Base {
         }
     }
 
+    /**
+     * @description handler for dying sockets
+     * @param {object} data
+     * @memberof Client
+     */
     __serviceLost(data) {
         if (is.object(data) && is.string(data._) && is.string(data.i) && is.number(data.p) && is.array(data.s)) {
             this.logger.info({ s: 'lost', d: data });
@@ -57,7 +77,6 @@ class Client extends Base {
                         try {
                             const socket = this._services[service][id];
                             if (socket) socket.disconnect();
-                            this.__flushMessages(socket._id);
                         } catch (e) {
                             this.logger.error(e);
                         }
@@ -75,15 +94,12 @@ class Client extends Base {
         }
     }
 
-    __flushMessages(id) {
-        for (let m of Object.keys(this._messages)) {
-            if (is.object(this._messages[m]) && (this._messages[m]._ === id || !id)) {
-                if (this._messages[m].t) clearTimeout(this._messages[m].t);
-                delete this._messages[m];
-            }
-        }
-    }
-
+    /**
+     * @description returns id of a random socket for a service
+     * @param {string} service
+     * @returns {string}
+     * @memberof Client
+     */
     __getSocket(service) {
         if (!this._services.hasOwnProperty(service)) throw new NanopolyError('INVALID_SERVICE');
 
@@ -93,6 +109,11 @@ class Client extends Base {
         return sockets[Math.floor(Math.random() * sockets.length)];
     }
 
+    /**
+     * @description handles incoming messages
+     * @param {object} payload message
+     * @memberof Client
+     */
     __onMessage(payload) {
         let { _: id, s: service, d: data } = this.__parseMessage(payload);
         if (service && this._messages.hasOwnProperty(service)) {
@@ -112,15 +133,30 @@ class Client extends Base {
         }
     }
 
+    /**
+     * @description background task
+     * @memberof Client
+     */
     __interval() {
         // TODO: implement removing dead connections
     }
 
+    /**
+     * @description schedules background job
+     * @memberof Client
+     */
     __flush() {
         if (this.flush) clearInterval(this.flush);
         this.flush = setInterval(this.__interval.bind(this), this.options.interval);
     }
 
+    /**
+     * @description sends a new message
+     * @param {string} path
+     * @param {*} data
+     * @param {function} cb
+     * @memberof Client
+     */
     send(path, data, cb) {
         if (is.not.function(cb)) cb = function() {};
         if (is.not.string(path) || is.empty(path)) return cb(new NanopolyError('INVALID_PATH'));
@@ -140,6 +176,11 @@ class Client extends Base {
         }
     }
 
+    /**
+     * @description provides graceful shutdown
+     * @param {boolean} remote flag to close connected servers too
+     * @memberof Client
+     */
     shutdown(remote) {
         for (let service in this._services) {
             for (let id in this._services[service]) {

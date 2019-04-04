@@ -9,7 +9,18 @@ const ServiceManager = require('./service-manager');
 const ZMQ = require('./zmq');
 const { NanopolyError } = require('./errors');
 
+/**
+ * @description This class is resposible for managing server socket for multiple services
+ * @class Server
+ * @extends {Base}
+ */
 class Server extends Base {
+    /**
+     *Creates an instance of Server.
+     * @param {ServiceManager} serviceManager
+     * @param {object} options
+     * @memberof Server
+     */
     constructor(serviceManager, options) {
         super(options || {});
 
@@ -24,6 +35,11 @@ class Server extends Base {
         this._socket.handle(this.__onMessage.bind(this));
     }
 
+    /**
+     * @description
+     * @param {function} cb callback
+     * @memberof Server
+     */
     async start(cb) {
         if (is.not.function(cb)) cb = () => {};
         if (this._started) {
@@ -48,6 +64,12 @@ class Server extends Base {
         }
     }
 
+    /**
+     * @description handles incoming messages
+     * @private
+     * @param {string} payload message
+     * @memberof Server
+     */
     __onMessage(payload) {
         let { _: id, d: data, p: path } = this.__parseMessage(payload);
         if (is.string(id) && is.string(path)) {
@@ -73,6 +95,11 @@ class Server extends Base {
         } else  this._socket.send({ _: id, d: 'INVALID_MESSAGE' });
     }
 
+    /**
+     * @description builds payload to publish
+     * @returns {string}
+     * @memberof Server
+     */
     __payload() {
         try {
             return JSON.stringify({
@@ -87,12 +114,20 @@ class Server extends Base {
         }
     }
 
+    /**
+     * @description background task
+     * @memberof Server
+     */
     __interval() {
         if (this.options.redis.status === 'ready' || is.array(this.options.group))
             for (let group of this.options.group)
                 this.options.redis.publish(`up-${ group }`, this.__payload());
     }
 
+    /**
+     * @description schedules background job
+     * @memberof Server
+     */
     __broadcast() {
         this.logger.info(`#${ this.options.port } is up and running`);
         if (this.broadcast) clearInterval(this.broadcast);
@@ -100,6 +135,10 @@ class Server extends Base {
         this.broadcast = setInterval(this.__interval.bind(this), this.options.interval);
     }
 
+    /**
+     * @description provides graceful shutdown
+     * @memberof Server
+     */
     shutdown() {
         this._socket.disconnect();
         if (this.broadcast) clearInterval(this.broadcast);

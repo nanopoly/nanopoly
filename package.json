@@ -1,6 +1,6 @@
 {
   "name": "nanopoly",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "a minimalist polyglot toolkit for building fast, decentralized, scalable and fault tolerant microservices",
   "main": "index.js",
   "scripts": {

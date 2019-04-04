@@ -45,10 +45,9 @@ docker run -p 6379:6379 --name nanopoly_redis redis:4-alpine
 ### Client Configuration
 
 - **delimiter :** delimiter between service and method names.
-- **interval :** expiring messages in milliseconds
+- **interval :** removing dead sockets in milliseconds
 - **logs :** log level for pico logger
 - **redis :** redis client
-- **timeout :** request timeout
 
 ## Methods
 
