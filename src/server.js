@@ -56,19 +56,19 @@ class Server extends Base {
             if (!this.serviceManager.hasService(service)) {
                 if (service === this.cmd.CLEAN_SHUTDOWN)
                     this.shutdown();
-                else this._socket.send({ _: id, d: 'INVALID_SERVICE' });
+                else this._socket.send({ _: id, s: service, d: 'INVALID_SERVICE' });
             } else {
                 const handler = this.serviceManager.getService(service, method);
                 if (is.function(handler)) {
                     try {
                         const p = handler(data, r =>
-                            this._socket.send({ _: id, d: r instanceof Error ? r.message : r }));
+                            this._socket.send({ _: id, s: service, d: r instanceof Error ? r.message : r }));
                         if (p instanceof Promise)
-                            p.catch(e => this._socket.send({ _: id, d: e.message }));
+                            p.catch(e => this._socket.send({ _: id, s: service, d: e.message }));
                     } catch (e) {
-                        this._socket.send({ _: id, d: e.message });
+                        this._socket.send({ _: id, s: service, d: e.message });
                     }
-                } else this._socket.send({ _: id, d: 'INVALID_METHOD' });
+                } else this._socket.send({ _: id, s: service, d: 'INVALID_METHOD' });
             }
         } else  this._socket.send({ _: id, d: 'INVALID_MESSAGE' });
     }

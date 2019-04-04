@@ -1,7 +1,6 @@
 'use strict';
 
 const is = require('is_js');
-const shortid = require('shortid');
 
 const Base = require('./base');
 const ZMQ = require('./zmq');
@@ -32,6 +31,7 @@ class Client extends Base {
             this.logger.info({ s: 'found', d: data });
             for (let service of data.s) {
                 if (!this._services.hasOwnProperty(service)) this._services[service] = {};
+                if (!this._messages.hasOwnProperty(service)) this._messages[service] = {};
                 if (!this._services[service].hasOwnProperty(data._)) {
                     const socket = new ZMQ('req');
                     socket._since = Date.now();
@@ -40,6 +40,8 @@ class Client extends Base {
                     socket.connect(data.p, data.i);
                     this._services[service][data._] = socket;
                 } else this._services[service][data._]._since = Date.now();
+                if (!this._messages[service].hasOwnProperty(data._))
+                    this._messages[service][data._] = [];
             }
         }
     }
@@ -62,6 +64,13 @@ class Client extends Base {
                         delete this._services[service][id];
                     }
                 }
+                if (this._messages.hasOwnProperty(service)) {
+                    for (let id in this._messages[service]) {
+                        if (id !== data._) continue;
+
+                        delete this._messages[service][id];
+                    }
+                }
             }
         }
     }
@@ -81,44 +90,30 @@ class Client extends Base {
         const sockets = Object.keys(this._services[service]);
         if (!sockets.length) throw new NanopolyError('INVALID_SERVICE');
 
-        return this._services[service][sockets[Math.floor(Math.random() * sockets.length)]];
+        return sockets[Math.floor(Math.random() * sockets.length)];
     }
 
     __onMessage(payload) {
-        let { _: id, d: data } = this.__parseMessage(payload);
-        if (this._messages.hasOwnProperty(id)) {
-            if (this._messages[id].t) clearTimeout(this._messages[id].t);
-            if (!data || is.string(data)) data = is.string(data) ?
-                new NanopolyError(data) : new NanopolyError('EMPTY_RESPONSE');
+        let { _: id, s: service, d: data } = this.__parseMessage(payload);
+        if (service && this._messages.hasOwnProperty(service)) {
+            if (id && this._messages[service].hasOwnProperty(id)) {
+                if (!data || is.string(data)) data = is.string(data) ?
+                    new NanopolyError(data) : new NanopolyError('EMPTY_RESPONSE');
 
-            this.__reply(id, data);
-        }
-    }
-
-    __reply(id, data) {
-        try {
-            const r = this._messages[id].c(data, () => {
-                if (this._messages.hasOwnProperty(id)) delete this._messages[id];
-            });
-            if (r instanceof Promise)
-                r.then(() => {
-                    if (this._messages.hasOwnProperty(id)) delete this._messages[id];
-                }).catch(e => {
-                    if (this._messages.hasOwnProperty(id)) delete this._messages[id];
+                try {
+                    const cb = this._messages[service][id].shift();
+                    const r = cb(data);
+                    if (r instanceof Promise)
+                        r.catch(e => this.logger.error(e));
+                } catch (e) {
                     this.logger.error(e);
-                });
-            else if (this._messages.hasOwnProperty(id)) delete this._messages[id];
-        } catch (e) {
-            if (this._messages.hasOwnProperty(id)) delete this._messages[id];
-            this.logger.error(e);
+                }
+            }
         }
     }
 
     __interval() {
-        for (let id of Object.keys(this._messages)) {
-            if (this._messages[id].t) clearTimeout(this._messages[id].t);
-            this.__reply(id, new NanopolyError('MESSAGE_EXPIRED'));
-        }
+        // TODO: implement removing dead connections
     }
 
     __flush() {
@@ -126,41 +121,22 @@ class Client extends Base {
         this.flush = setInterval(this.__interval.bind(this), this.options.interval);
     }
 
-    __generateMessage(_, path, data, cb) {
-        const id = shortid.generate();
-        // TODO: replace this implementation with an ordered queue
-        if (this._messages.hasOwnProperty(id)) return this.__generateMessage();
-
-        this._messages[id] = { _, ts: Date.now(), p: path, d: data, c: cb };
-        return id;
-    }
-
     send(path, data, cb) {
         if (is.not.function(cb)) cb = function() {};
-        if (is.not.string(path) || is.empty(path)) return cb(new NanopolyError('INVALID_PATH'), () => {});
+        if (is.not.string(path) || is.empty(path)) return cb(new NanopolyError('INVALID_PATH'));
 
         const service = path.split(this.options.delimiter);
-        if (service.length < 2) return cb(new NanopolyError('MISSING_METHOD'), () => {});
+        if (service.length < 2) return cb(new NanopolyError('MISSING_METHOD'));
         else if (!service[1] || is.empty(service[1]) || service[1].charAt(0) === '_')
             return cb(new NanopolyError('INVALID_METHOD'), () => {});
 
         try {
-            const socket = this.__getSocket(service[0]);
-            const id = this.__generateMessage(socket._id, path, data, cb);
-
-            // ? is timeout enabled
-            if (is.number(this.options.timeout) && this.options.timeout > 0)
-                this._messages[id].t = setTimeout(() => {
-                    if (!this._messages.hasOwnProperty(id)) return;
-
-                    delete this._messages[id]; // TODO: implement retry via p and d parameters
-                    cb(new NanopolyError('REQUEST_TIMEOUT'));
-                }, this.options.timeout);
-
-            socket.send({ _: id, p: path, d: data });
+            const id = this.__getSocket(service[0]);
+            this._messages[service[0]][id].push(cb);
+            this._services[service[0]][id].send({ _: id, p: path, d: data });
         } catch(e) {
             this.logger.error(e);
-            cb(e, () => {});
+            cb(e);
         }
     }
 
