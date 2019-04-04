@@ -4,7 +4,8 @@
   "description": "a minimalist polyglot toolkit for building fast, decentralized, scalable and fault tolerant microservices",
   "main": "index.js",
   "scripts": {
-    "test": "./node_modules/jest/bin/jest.js"
+    "coverage": "./node_modules/.bin/jest --coverage",
+    "test": "./node_modules/.bin/jest"
   },
   "repository": {
     "type": "git",
