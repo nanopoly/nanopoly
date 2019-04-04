@@ -152,13 +152,7 @@ class Client extends Base {
                 }
             }
         }
-
-        for (let id in this._messages) {
-            if (this._messages[id].t) clearTimeout(this._messages[id].t);
-            if (this._messages.hasOwnProperty(id)) delete this._messages[id];
-        }
-
-        this.options.redis.unsubscribe(() => this.options.redis.disconnect()); // ! callback exists?
+        this.options.redis.unsubscribe(() => this.options.redis.disconnect());
     }
 }
 

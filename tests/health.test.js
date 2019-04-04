@@ -27,7 +27,7 @@ describe('health tests', () => {
     test('service response', async done => {
         setTimeout(() => {
             const msg = { n: `#${ Math.floor(Math.random() * 1000) }` };
-            client.send('service.echo', msg, async (r) => {
+            client.send('service.echo', msg, async r => {
                 expect(msg.n).toEqual(r.n);
                 done();
             });
