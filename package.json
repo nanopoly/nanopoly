@@ -1,0 +1,51 @@
+{
+  "name": "nanopoly",
+  "version": "0.2.0",
+  "description": "a minimalist polyglot toolkit for building fast, decentralized, scalable and fault tolerant microservices",
+  "main": "index.js",
+  "scripts": {
+    "coverage": "./node_modules/.bin/jest --coverage",
+    "test": "./node_modules/.bin/jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nanopoly/nanopoly.git"
+  },
+  "keywords": [
+    "microservices",
+    "soa",
+    "rpc",
+    "zeromq",
+    "zmq",
+    "Ømq",
+    "service registry",
+    "service discovery"
+  ],
+  "engines": {
+    "node": ">=v6.14.4"
+  },
+  "author": "Umut Aydin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/nanopoly/nanopoly/issues"
+  },
+  "homepage": "https://github.com/nanopoly/nanopoly#readme",
+  "devDependencies": {
+    "eslint": "^5.15.3",
+    "eslint-config-airbnb-base": "^13.1.0",
+    "eslint-plugin-import": "^2.16.0",
+    "ioredis": "^4.9.0",
+    "jest": "^24.5.0"
+  },
+  "dependencies": {
+    "is_js": "^0.9.0",
+    "local-ip": "^2.0.0",
+    "pino": "^5.12.0",
+    "portfinder": "^1.0.20",
+    "shortid": "^2.2.14",
+    "zeromq": "^5.1.0"
+  },
+  "jest": {
+    "testEnvironment": "node"
+  }
+}
