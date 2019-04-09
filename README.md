@@ -1,4 +1,4 @@
-# nanopoly
+# nanopoly (UNDER DEVELOPMENT)
 
 a minimalist polyglot toolkit for building fast, scalable and fault tolerant microservices
 
