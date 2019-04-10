@@ -29,7 +29,7 @@ class Server extends Base {
 
         this._started = false;
         this.serviceManager = serviceManager;
-        this._socket = new ZMQ();
+        this._socket = new ZMQ('rep');
         this._socket.handle('bind', () => this.__broadcast());
         this._socket.handle('error', e => this.logger.error(e));
         this._socket.handle(this.__onMessage.bind(this));
@@ -57,7 +57,7 @@ class Server extends Base {
         try {
             const port = await portFinder.getPortPromise({ port: startFrom });
             this.options.port = port;
-            this._socket.connect(this.options.port);
+            this._socket.connect(this.options.port, '0.0.0.0', 'bind');
         } catch (error) {
             this.logger.error(error);
             cb(error);
