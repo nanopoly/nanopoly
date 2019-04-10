@@ -52,7 +52,7 @@ class Client extends Base {
                     socket._since = Date.now();
                     socket.handle('error', e => this.logger.error(e));
                     socket.handle(this.__onMessage.bind(this));
-                    socket.connect(data.p, data.i);
+                    socket.connect(data.p, data.i, 'connect');
                     this._services[service][data._] = socket;
                 } else this._services[service][data._]._since = Date.now();
                 if (!this._messages[service].hasOwnProperty(data._))
