@@ -15,13 +15,6 @@ class EventHandlerError extends NanopolyError {
     }
 }
 
-class SocketTypeError extends NanopolyError {
-    constructor(type) {
-        super(`invalid socket type : ${ type }`);
-        this.data = { type };
-    }
-}
-
 class ServiceError extends NanopolyError {
     constructor(service) {
         super(`service must be a class instead of ${ typeof service }`);
@@ -32,6 +25,5 @@ class ServiceError extends NanopolyError {
 module.exports = {
     EventHandlerError,
     NanopolyError,
-    ServiceError,
-    SocketTypeError
+    ServiceError
 };

@@ -4,7 +4,7 @@ const is = require('is_js');
 const shortid = require('shortid');
 const ZeroMQ = require('zeromq');
 
-const { SocketTypeError, EventHandlerError } = require('./errors');
+const { EventHandlerError, NanopolyError } = require('./errors');
 
 /**
  * @description Wrapper class for ZeroMQ sockets
@@ -14,14 +14,10 @@ const { SocketTypeError, EventHandlerError } = require('./errors');
 class ZMQ {
     /**
      * @description Creates an instance of ZMQ.
-     * @param {string} [type='rep']     socket type
+     * @param {string} type     socket type
      * @memberof ZMQ
      */
-    constructor(type = 'rep') {
-        this.TYPES = { CLIENT: 'req', SERVER: 'rep' };
-        if (type !== this.TYPES.CLIENT && type !== this.TYPES.SERVER)
-            throw new SocketTypeError(type);
-
+    constructor(type) {
         this._id = shortid.generate();
         this._type = type;
         this._socket = ZeroMQ.socket(this._type);
@@ -31,14 +27,15 @@ class ZMQ {
      * @description establishes a connection
      * @param {number} [port=8000]      server's port number
      * @param {string} [ip='0.0.0.0']   server's ip address
+     * @throws NanopolyError
      * @memberof ZMQ
      */
-    connect(port = 8000, ip = '0.0.0.0') {
+    connect(port = 8000, ip = '0.0.0.0', method) {
         this._address = `${ ip }:${ port }`;
-        if (this._type === this.TYPES.SERVER)
-            this._socket.bind(`tcp://${ ip }:${ port }`);
-        else
-            this._socket.connect(`tcp://${ ip }:${ port }`);
+        if (is.not.function(this._socket[method]))
+            throw new NanopolyError(`invalid method for working with ${ this._type } sockets`);
+
+        this._socket[method](`tcp://${ ip }:${ port }`);
     }
 
     /**
