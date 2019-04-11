@@ -1,5 +1,6 @@
 'use strict';
 
+const cluster = require('cluster');
 const is = require('is_js');
 const localIP = require('local-ip');
 const portFinder = require('portfinder');
@@ -23,41 +24,55 @@ class Server extends Base {
      */
     constructor(serviceManager, options) {
         super(options || {});
-
         if (!(serviceManager instanceof ServiceManager))
-            throw new NanopolyError('services must be an instance of service manager');
+            throw new NanopolyError('invalid service manager');
 
-        this._started = false;
         this.serviceManager = serviceManager;
-        this._socket = new ZMQ('rep');
-        this._socket.handle('bind', () => this.__broadcast());
-        this._socket.handle('error', e => this.logger.error(e));
-        this._socket.handle(this.__onMessage.bind(this));
+        this._backend = new ZMQ('dealer');
+        this._frontend = new ZMQ('router');
+        this._worker = new ZMQ('rep');
+
+        const self = this;
+        this._frontend.handle('error', e => this.logger.error(e));
+        this._backend.handle('error', e => this.logger.error(e));
+        this._frontend.handle(function() {
+            const payload = Array.apply(null, arguments);
+            self._backend.send(payload);
+        });
+        this._backend.handle(function() {
+            const payload = Array.apply(null, arguments);
+            self._frontend.send(payload);
+        });
     }
 
     /**
      * @description
-     * @param {function} cb callback
+     * @param {function} [cb] callback
      * @memberof Server
      */
     async start(cb) {
         if (is.not.function(cb)) cb = () => {};
-        if (this._started) {
-            const error = new NanopolyError(`already started on #${ this.options.port }`);
-            this.logger.error(error);
-            return cb(error);
-        } else if (this.serviceManager.isEmpty()) {
-            const error = new NanopolyError('no service added');
-            this.logger.error(error);
-            return cb(error);
-        }
 
-        this._started = true;
-        const startFrom = is.number(this.options.port) ? Math.abs(this.options.port) : undefined;
         try {
-            const port = await portFinder.getPortPromise({ port: startFrom });
-            this.options.port = port;
-            this._socket.connect(this.options.port, '0.0.0.0', 'bind');
+            const startFrom = is.number(this.options.port) ? Math.abs(this.options.port) : undefined;
+            if (cluster.isMaster) {
+                const port = await portFinder.getPortPromise({ port: startFrom });
+                this.options.port = port;
+                this._frontend.connect(this.options.port, '0.0.0.0', 'bindSync');
+
+                const port2 = await portFinder.getPortPromise({ port: port });
+                this.options.port2 = port2;
+                this._backend.connect(this.options.port2, '127.0.0.1', 'bindSync');
+                this.__broadcast();
+
+                for (let i = 0; i < this.options.cpu; i++)
+                    cluster.fork({ WORKER_PORT: this.options.port2 })
+                        .on('exit', () => console.log('exited', process.pid));
+            } else if(cluster.isWorker) {
+                this._worker.handle('error', e => this.logger.error(e));
+                this._worker.handle(this.__onMessage.bind(this));
+                this._worker.connect(process.env.WORKER_PORT, '127.0.0.1', 'connect');
+            }
         } catch (error) {
             this.logger.error(error);
             cb(error);
@@ -78,21 +93,21 @@ class Server extends Base {
             if (!this.serviceManager.hasService(service)) {
                 if (service === this.cmd.CLEAN_SHUTDOWN)
                     this.shutdown();
-                else this._socket.send({ _: id, s: service, d: 'INVALID_SERVICE' });
+                else this._worker.send({ _: id, s: service, d: 'INVALID_SERVICE' });
             } else {
                 const handler = this.serviceManager.getService(service, method);
                 if (is.function(handler)) {
                     try {
                         const p = handler(data, r =>
-                            this._socket.send({ _: id, s: service, d: r instanceof Error ? r.message : r }));
+                            this._worker.send({ _: id, s: service, d: r instanceof Error ? r.message : r }));
                         if (p instanceof Promise)
-                            p.catch(e => this._socket.send({ _: id, s: service, d: e.message }));
+                            p.catch(e => this._worker.send({ _: id, s: service, d: e.message }));
                     } catch (e) {
-                        this._socket.send({ _: id, s: service, d: e.message });
+                        this._worker.send({ _: id, s: service, d: e.message });
                     }
-                } else this._socket.send({ _: id, s: service, d: 'INVALID_METHOD' });
+                } else this._worker.send({ _: id, s: service, d: 'INVALID_METHOD' });
             }
-        } else  this._socket.send({ _: id, d: 'INVALID_MESSAGE' });
+        } else  this._worker.send({ _: id, d: 'INVALID_MESSAGE' });
     }
 
     /**
@@ -103,7 +118,7 @@ class Server extends Base {
     __payload() {
         try {
             return JSON.stringify({
-                _: this._socket._id,
+                _: this._frontend._id,
                 i: localIP(this.options.iface),
                 p: this.options.port,
                 s: Object.keys(this.serviceManager._services)
@@ -119,9 +134,10 @@ class Server extends Base {
      * @memberof Server
      */
     __interval() {
+        const payload = this.__payload();
         if (this.options.redis.status === 'ready' || is.array(this.options.group))
             for (let group of this.options.group)
-                this.options.redis.publish(`up-${ group }`, this.__payload());
+                this.options.redis.publish(`up-${ group }`, payload);
     }
 
     /**
@@ -140,11 +156,18 @@ class Server extends Base {
      * @memberof Server
      */
     shutdown() {
-        this._socket.disconnect();
-        if (this.broadcast) clearInterval(this.broadcast);
-        if (is.array(this.options.group))
-            for (let group of this.options.group)
-                this.options.redis.publish(`down-${ group }`, this.__payload());
+        if (cluster.isMaster) {
+            const payload = this.__payload();
+            this._frontend.disconnect();
+            this._backend.disconnect();
+            if (this.broadcast) clearInterval(this.broadcast);
+            if (is.array(this.options.group))
+                for (let group of this.options.group)
+                    this.options.redis.publish(`down-${ group }`, payload);
+        } else {
+            this._worker.disconnect();
+        }
+        cluster.worker.kill();
         this.options.redis.disconnect();
     }
 }
