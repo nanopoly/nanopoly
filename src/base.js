@@ -1,6 +1,7 @@
 'use strict';
 
 const is = require('is_js');
+const numCPUs = require('os').cpus().length;
 const pino = require('pino');
 
 const { NanopolyError, ServiceError } = require('./errors');
@@ -18,6 +19,7 @@ class Base {
     constructor(options) {
         this.cmd = { CLEAN_SHUTDOWN: '#CS#' };
         this.options = {
+            cpu: numCPUs,
             delimiter: '.',
             iface: 'eth0',
             interval: 3000,

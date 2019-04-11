@@ -18,7 +18,7 @@ class ZMQ {
      * @memberof ZMQ
      */
     constructor(type) {
-        this._id = shortid.generate();
+        this._id = `${ type }-${ shortid.generate() }`;
         this._type = type;
         this._socket = ZeroMQ.socket(this._type);
     }
@@ -61,7 +61,9 @@ class ZMQ {
      */
     send(msg) {
         try {
-            this._socket.send(is.not.string(msg) ? JSON.stringify(msg) : msg);
+            if (!is.array(msg))
+                this._socket.send(is.not.string(msg) ? JSON.stringify(msg) : msg);
+            else this._socket.send(msg);
         } catch (e) {
             return;
         }
