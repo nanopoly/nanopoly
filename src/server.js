@@ -63,7 +63,7 @@ class Server extends Base {
                 this._backend.connect(this.options.port2, '127.0.0.1', 'bindSync');
                 this.__broadcast();
 
-                for (let i = 0; i < this.options.cpu; i++)
+                for (let i = 0; i < this.options.cpu; i++) // TODO: cluster module should be optional
                     cluster.fork({ WORKER_PORT: this.options.port2 })
                         .on('message', msg => msg === this.cmd.CLEAN_SHUTDOWN ? this.shutdown() : null);
             } else if(cluster.isWorker) {
@@ -160,7 +160,7 @@ class Server extends Base {
                 for (let group of this.options.group)
                     this.options.redis.publish(`down-${ group }`, payload);
             for (let id of Object.keys(cluster.workers))
-                cluster.workers[id].kill();
+                cluster.workers[id].kill(); // TODO: improve?!
         } else process.send(this.cmd.CLEAN_SHUTDOWN);
         this._frontend.disconnect();
         this._backend.disconnect();
