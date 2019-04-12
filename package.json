@@ -5,7 +5,8 @@
   "main": "index.js",
   "scripts": {
     "coverage": "./node_modules/.bin/jest --coverage",
-    "test": "./node_modules/.bin/jest"
+    "jest": "./node_modules/.bin/jest",
+    "test": "node tests/health.js | ./node_modules/.bin/tap-spec"
   },
   "repository": {
     "type": "git",
@@ -35,7 +36,9 @@
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.16.0",
     "ioredis": "^4.9.0",
-    "jest": "^24.5.0"
+    "jest": "^24.5.0",
+    "tap-spec": "^5.0.0",
+    "tape": "^4.10.1"
   },
   "dependencies": {
     "is_js": "^0.9.0",
