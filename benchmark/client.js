@@ -6,7 +6,7 @@ const Redis = require('ioredis');
 
 const client = new Client({ redis: new Redis(), logs: 'fatal' });
 
-const total = { time: 0, count: 0, error: 0 }, limit = 25000;
+const total = { time: 0, count: 0, error: 0 }, limit = 1000;
 let started = 0;
 
 function request(i) {
