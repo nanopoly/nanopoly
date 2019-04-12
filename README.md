@@ -22,6 +22,7 @@ git clone https://github.com/nanopoly/nanopoly.git
 cd nanopoly
 npm i
 npm test
+npm run health
 ```
 
 Before running tests, please make sure that you have Redis available on localhost.
@@ -35,6 +36,7 @@ docker run -p 6379:6379 --name nanopoly_redis redis:4-alpine
 
 ### Server Configuration
 
+- **cpu :** number of forks.
 - **delimiter :** delimiter between service and method names.
 - **iface :** network interface (eth0 by default) for detecting ip address.
 - **interval :** publishing service ports via redis in milliseconds
