@@ -1,12 +1,12 @@
 {
   "name": "nanopoly",
-  "version": "0.2.1",
-  "description": "a minimalist polyglot toolkit for building fast, decentralized, scalable and fault tolerant microservices",
+  "version": "0.3.2",
+  "description": "a minimalist polyglot cluster-enabled toolkit for building fast, decentralized, scalable and fault tolerant microservices",
   "main": "index.js",
   "scripts": {
     "coverage": "./node_modules/.bin/jest --coverage",
-    "jest": "./node_modules/.bin/jest",
-    "test": "node tests/health.js | ./node_modules/.bin/tap-spec"
+    "health": "node tests/health.js | ./node_modules/.bin/tap-spec",
+    "test": "./node_modules/.bin/jest"
   },
   "repository": {
     "type": "git",
@@ -32,18 +32,18 @@
   },
   "homepage": "https://github.com/nanopoly/nanopoly#readme",
   "devDependencies": {
-    "eslint": "^5.15.3",
+    "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.1.0",
     "eslint-plugin-import": "^2.16.0",
     "ioredis": "^4.9.0",
-    "jest": "^24.5.0",
+    "jest": "^24.7.1",
     "tap-spec": "^5.0.0",
     "tape": "^4.10.1"
   },
   "dependencies": {
     "is_js": "^0.9.0",
     "local-ip": "^2.0.0",
-    "pino": "^5.12.0",
+    "pino": "^5.12.2",
     "portfinder": "^1.0.20",
     "shortid": "^2.2.14",
     "zeromq": "^5.1.0"
