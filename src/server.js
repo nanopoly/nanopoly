@@ -3,12 +3,28 @@
 const Base = require('../lib/base');
 const is = require('is_js');
 
+/**
+ * @description nanopoly server class
+ * @extends {Base}
+ * @class Server
+ */
 class Server extends Base {
+    /**
+     *Creates an instance of Server.
+     * @param {Object} plugin transport plugin { Client, Server }
+     * @param {Object} options
+     * @memberof Server
+     */
     constructor(plugin, options) {
         super(plugin, options);
         this._name = this.constructor.name.toLowerCase();
     }
 
+    /**
+     * @description adds a new service
+     * @param {Function} service class with some static methods
+     * @memberof Server
+     */
     addService(service) {
         if (is.not.function(service)) throw new Error('service must be a class');
 
@@ -18,6 +34,12 @@ class Server extends Base {
         this._services[name] = { s: new this._ServerPlugin(options), c: service };
     }
 
+    /**
+     * @description processes received message
+     * @param {Object} m message
+     * @returns Promise
+     * @memberof Server
+     */
     async _onMessage(m) {
         const { s: service, m: method, id } = m;
         if (is.not.string(service) || is.not.string(method) || is.not.string(id)) throw new Error('invalid message');
@@ -30,14 +52,14 @@ class Server extends Base {
         return await this._services[service].c[method](m);
     }
 
+    /**
+     * @description starts server instances
+     * @memberof Server
+     */
     start() {
         if (is.empty(this._services)) throw new Error('there is no service');
 
         for (let name in this._services) this._services[name].s.start(async m => this._onMessage(m));
-    }
-
-    stop() {
-        for (let name in this._services) this._services[name].s.stop();
     }
 }
 

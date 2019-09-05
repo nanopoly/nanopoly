@@ -4,12 +4,28 @@ const Base = require('../lib/base');
 const is = require('is_js');
 const shortid = require('shortid');
 
+/**
+ * @description nanopoly client class
+ * @extends {Base}
+ * @class Client
+ */
 class Client extends Base {
+    /**
+     *Creates an instance of Client.
+     * @param {Object} plugin transport plugin { Client, Server }
+     * @param {Object} options
+     * @memberof Client
+     */
     constructor(plugin, options) {
         super(plugin, options);
         this._name = this.constructor.name.toLowerCase();
     }
 
+    /**
+     * @description processes received message
+     * @param {Object} m message
+     * @memberof Client
+     */
     _onMessage(m) {
         const { e: err, s: service, d: data, id } = m;
         if (is.not.string(service) || is.not.string(id)) throw new Error('invalid message');
@@ -21,6 +37,11 @@ class Client extends Base {
         delete this._services[service].m[id];
     }
 
+    /**
+     * @description starts client instances
+     * @param {Array} services list of services
+     * @memberof Client
+     */
     start(services) {
         if (is.not.array(services) || is.empty(services)) throw new Error('there is no service');
 
@@ -32,6 +53,14 @@ class Client extends Base {
         }
     }
 
+    /**
+     * @description sends a new message
+     * @param {String} service service name
+     * @param {String} method method name
+     * @param {any} data payload
+     * @returns Promise
+     * @memberof Client
+     */
     send(service, method, data) {
         return new Promise((resolve, reject) => {
             try {
@@ -50,10 +79,6 @@ class Client extends Base {
                 reject(e);
             }
         });
-    }
-
-    stop() {
-        for (let name in this._services) this._services[name].s.stop();
     }
 }
 
