@@ -2,10 +2,8 @@
 
 a minimalist polyglot toolkit for building fast, scalable and fault tolerant microservices
 
-## Dependencies
-
-Nanopoly has two cross-platform dependencies: ZeroMQ and Redis.
-ZeroMQ is the cross-platform transport layer and Redis is for dynamic service registry via publish / subscribe pattern.
+The idea behind this project is experimental and it will take time to optimize.
+Please do not use in production but testing under heavy load is always welcome.
 
 ## Install
 
@@ -22,7 +20,6 @@ git clone https://github.com/nanopoly/nanopoly.git
 cd nanopoly
 npm i
 npm test
-npm run health
 ```
 
 Before running tests, please make sure that you have Redis available on localhost.
@@ -34,40 +31,43 @@ docker run -p 6379:6379 --name nanopoly_redis redis:4-alpine
 
 ## Configuration
 
-### Server Configuration
-
-- **cpu :** number of forks.
-- **delimiter :** delimiter between service and method names.
-- **iface :** network interface (eth0 by default) for detecting ip address.
-- **interval :** publishing service ports via redis in milliseconds
-- **logs :** log level for pico logger
-- **port :** start point for port range. If you set server instance looks up for its port starting from this number. It's 8000 by default.
-- **redis :** redis client
-
-### Client Configuration
-
-- **delimiter :** delimiter between service and method names.
-- **interval :** removing dead sockets in milliseconds
-- **logs :** log level for pico logger
-- **redis :** redis client
+- **log         :** options for pino's log level. there is also an environment variable called LOG_LEVEL. it's error by default.
+- **plugin      :** configuration for transport plugin. please see plugin's repository for more details.
+- **prefix      :** prefix to avoid confusion in subscribed channel names
 
 ## Methods
 
-### Service Manager Methods
-
-- **addService :** adds a new service class to manager
-- **addServices :** adds a list of service classes to manager
-- **addPath :** adds all service classes in a folder to manager
-- **hasService :** checks if a service available
-- **isEmpty :** checks if there is any service
-- **getService :** returns request handler from a service
-
 ### Server Methods
 
-- **start :** starts server instance and publishes socket information
-- **shutdown :** provides graceful shutdown
+- **.start():** initiates pairing connections between client and server instances
+- **.stop():** stops open connections for clean shutdown
 
-### Client Methods
+***If you don't know what you are doing, I wouldn't recommend you to call private methods and change instance variables directly.***
 
-- **start :** starts client instance and waits for socket information
-- **shutdown :** provides graceful shutdown
+## Examples
+
+```js
+const { Client, Server } = require('nanopoly');
+const Plugin = require('nanopoly-zeromq');
+
+class Service {
+    static _name() {
+        return 's';
+    }
+
+    static async process(m) {
+        return true;
+    }
+}
+
+const server = server = new Server(Plugin, { log: 'debug' });
+server.addService(Service);
+server.start();
+
+const client = new Client(Plugin, { log: 'debug' });
+client.start([ 's' ]);
+const r = await client.send('s', 'process', Math.random());
+
+client.stop();
+server.stop();
+```
