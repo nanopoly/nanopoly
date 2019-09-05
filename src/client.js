@@ -18,6 +18,7 @@ class Client extends Base {
 
         if (err) this._services[service].m[id][1](new Error(err));
         else this._services[service].m[id][0](data);
+        delete this._services[service].m[id];
     }
 
     start(services) {
@@ -41,6 +42,7 @@ class Client extends Base {
 
                 const msg = { id: shortid.generate(), d: data, s: service, m: method };
                 const instances = Object.keys(this._services[service].s._push);
+                if (is.empty(instances)) throw new Error(`no pair found for service(${ service })`);
                 const address = instances[Math.floor(Math.random() * instances.length)];
                 this._services[service].s.send(address, msg);
                 this._services[service].m[ msg.id ] = [ resolve, reject ];
