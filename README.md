@@ -39,7 +39,14 @@ docker run -p 6379:6379 --name nanopoly_redis redis:4-alpine
 
 ### Server Methods
 
-- **.start():** initiates pairing connections between client and server instances
+- **.start():** starts server instances for each service
+- **.addService(service):** adds a new service to handle related requests
+- **.stop():** stops open connections for clean shutdown
+
+### Client Methods
+
+- **.start(services):** starts client instances for each service
+- **.send(service, method, data):** sends a new message to be process
 - **.stop():** stops open connections for clean shutdown
 
 ***If you don't know what you are doing, I wouldn't recommend you to call private methods and change instance variables directly.***
