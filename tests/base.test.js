@@ -1,41 +1,36 @@
 'use strict';
 
-const Base = require('../src/base');
-const Redis = require('ioredis');
+const Base = require('../lib/base');
+const Plugin = require('nanopoly-zeromq');
 
 class Service {
-    static async echo(request, reply){
-        reply(request);
-    }
 }
 
 class Service2 {
     static _name() {
         return 's';
     }
-
-    static async echo(request, reply){
-        reply(request);
-    }
 }
 
 describe('base class tests', () => {
-    const base = new Base({ logs: 'fatal', redis: new Redis() });
-    afterAll(() => base.options.redis.disconnect());
-
+    const base = new Base(Plugin, { log: 'fatal', prefix: 'a' });
     test('ability to overwrite options', async () => {
-        expect(base.options.logs).toBe('fatal');
+        expect(base._options.log).toBe('fatal');
+    });
+
+    test('invalid service', async () => {
+        expect(() => base._fixServiceName('test')).toThrow();
     });
 
     test('default service name', async () => {
-        expect(Base.__fixServiceName(Service)).toBe('service');
+        expect(base._fixServiceName(Service)).toBe('service');
     });
 
     test('overwritten service name', async () => {
-        expect(Base.__fixServiceName(Service2)).toBe('s');
+        expect(base._fixServiceName(Service2)).toBe('s');
     });
 
-    test('blocked service name', async () => {
-        expect(Base.__fixServiceName(Service2)).not.toBe('service2');
+    test('prefix', () => {
+        expect(base._prefix('b')).toBe('a-b');
     });
 });
