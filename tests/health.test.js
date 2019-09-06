@@ -8,12 +8,21 @@ class Service {
         return 's';
     }
 
+    static _delay() {
+        return new Promise(resolve => setTimeout(resolve, 3000));
+    }
+
     static async echo(m) {
         return m.d;
     }
 
     static async throws() {
         throw new Error('test');
+    }
+
+    static async long() {
+        await this._delay();
+        return true;
     }
 }
 
@@ -71,5 +80,14 @@ describe('communication health tests', () => {
     test('no data', async () => {
         const r = await client.send('s', 'echo');
         expect(r).toBe(undefined);
+    });
+
+    test('timeout', async () => {
+        try {
+            await client.send('s', 'long', undefined, 1000);
+            expect(false).toBeTruthy();
+        } catch (e) {
+            expect(e).toBeTruthy();
+        }
     });
 });
