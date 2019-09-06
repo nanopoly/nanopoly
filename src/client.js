@@ -34,6 +34,7 @@ class Client extends Base {
 
         if (err) this._services[service].m[id][1](new Error(err));
         else this._services[service].m[id][0](data);
+        if (this._services[service].m[id][2]) clearTimeout(this._services[service].m[id][2]);
         delete this._services[service].m[id];
     }
 
@@ -58,10 +59,11 @@ class Client extends Base {
      * @param {String} service service name
      * @param {String} method method name
      * @param {any} data payload
+     * @param {Number} timeout
      * @returns Promise
      * @memberof Client
      */
-    send(service, method, data) {
+    send(service, method, data, timeout) {
         return new Promise((resolve, reject) => {
             try {
                 if (is.not.string(service) || is.not.string(method) || method.startsWith('_'))
@@ -75,6 +77,12 @@ class Client extends Base {
                 const address = instances[Math.floor(Math.random() * instances.length)];
                 this._services[service].s.send(address, msg);
                 this._services[service].m[ msg.id ] = [ resolve, reject ];
+                if (is.not.number(timeout)) timeout = this._options.timeout;
+                if (timeout) this._services[service].m[ msg.id ].push(setTimeout(() => {
+                    clearTimeout(this._services[service].m[ msg.id ][2]);
+                    this._services[service].m[ msg.id ][1](new Error('request timed out'));
+                    delete this._services[service].m[ msg.id ];
+                }, timeout));
             } catch (e) {
                 reject(e);
             }
