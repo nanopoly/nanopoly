@@ -55,7 +55,7 @@ docker run -p 6379:6379 --name nanopoly_redis redis:4-alpine
 
 ```js
 const { Client, Server } = require('nanopoly');
-const Plugin = require('nanopoly-zeromq');
+const Plugin = require('nanopoly-zeromq'); // or require('nanopoly-nanomsg')
 
 class Service {
     static _name() {
