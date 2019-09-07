@@ -1,40 +1,17 @@
 'use strict';
 
-const { Client, Server } = require('../');
+const { Client, Server } = require('..');
 const Plugin = require('nanopoly-zeromq');
-
-class Service {
-    static _name() {
-        return 's';
-    }
-
-    static _delay() {
-        return new Promise(resolve => setTimeout(resolve, 3000));
-    }
-
-    static async echo(m) {
-        return m.d;
-    }
-
-    static async throws() {
-        throw new Error('test');
-    }
-
-    static async long() {
-        await this._delay();
-        return true;
-    }
-}
 
 let client, server, data = Date.now();
 
-describe('communication health tests', () => {
+describe('zeromq health tests', () => {
     beforeAll(async done => {
-        server = new Server(Plugin, { log: 'debug' });
-        server.addService(Service);
+        server = new Server(Plugin, { log: 'debug', prefix: 'zmq' });
+        server.addService(require('./service'));
         server.start();
         setTimeout(() => {
-            client = new Client(Plugin, { log: 'debug' });
+            client = new Client(Plugin, { log: 'debug', prefix: 'zmq' });
             client.start([ 's' ]);
             setTimeout(done, 1000);
         }, 1000);
