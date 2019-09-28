@@ -22,16 +22,18 @@ class Server extends Base {
 
     /**
      * @description adds a new service
+     * @param {Object} publisher redis client to publish
+     * @param {Object} subscriber redis client to subscribe
      * @param {Function} service class with some static methods
      * @memberof Server
      */
-    addService(service) {
+    addService(publisher, subscriber, service) {
         if (is.not.function(service)) throw new Error('service must be a class');
 
         const name = this._fixServiceName(service);
         const options = Object.assign({}, this._options.plugin || {});
         options.prefix = this._prefix(name);
-        this._services[name] = { s: new this._ServerPlugin(options), c: service };
+        this._services[name] = { s: new this._ServerPlugin(publisher, subscriber, options), c: service };
     }
 
     /**

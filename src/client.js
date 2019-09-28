@@ -40,16 +40,18 @@ class Client extends Base {
 
     /**
      * @description starts client instances
+     * @param {Object} publisher redis client to publish
+     * @param {Object} subscriber redis client to subscribe
      * @param {Array} services list of services
      * @memberof Client
      */
-    start(services) {
+    start(publisher, subscriber, services) {
         if (is.not.array(services) || is.empty(services)) throw new Error('there is no service');
 
         for (let name of services) {
             const options = Object.assign({}, this._options.plugin || {});
             options.prefix = this._prefix(name);
-            this._services[name] = { s: new this._ClientPlugin(options), m: {} };
+            this._services[name] = { s: new this._ClientPlugin(publisher, subscriber, options), m: {} };
             this._services[name].s.start(async m => this._onMessage(m));
         }
     }
