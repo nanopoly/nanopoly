@@ -2,19 +2,22 @@
 
 const { Client, Server } = require('..');
 const Plugin = require('nanopoly-zeromq');
+const redis = require('redis-mock');
 
 let client, server, data = Date.now();
+const publisher = redis.createClient();
+const subscriber = redis.createClient();
 
 describe('zeromq health tests', () => {
     beforeAll(async done => {
         server = new Server(Plugin, { log: 'debug', prefix: 'zmq' });
-        server.addService(require('./service'));
+        server.addService(publisher, subscriber, require('./service'));
         server.start();
         setTimeout(() => {
             client = new Client(Plugin, { log: 'debug', prefix: 'zmq' });
-            client.start([ 's' ]);
-            setTimeout(done, 1000);
-        }, 1000);
+            client.start(publisher, subscriber, [ 's' ]);
+            setTimeout(done, 500);
+        }, 500);
     });
 
     afterAll(() => {
