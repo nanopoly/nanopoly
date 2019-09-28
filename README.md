@@ -56,6 +56,7 @@ docker run -p 6379:6379 --name nanopoly_redis redis:4-alpine
 ```js
 const { Client, Server } = require('nanopoly');
 const Plugin = require('nanopoly-zeromq'); // or require('nanopoly-nanomsg')
+const redis = require('redis');
 
 class Service {
     static _name() {
@@ -67,12 +68,15 @@ class Service {
     }
 }
 
+const publisher = redis.createClient();
+const subscriber = redis.createClient();
+
 const server = server = new Server(Plugin, { log: 'debug' });
-server.addService(Service);
+server.addService(publisher, subscriber, Service);
 server.start();
 
 const client = new Client(Plugin, { log: 'debug' });
-client.start([ 's' ]);
+client.start(publisher, subscriber, [ 's' ]);
 const r = await client.send('s', 'process', Math.random());
 
 client.stop();
