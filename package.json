@@ -1,6 +1,6 @@
 {
   "name": "nanopoly",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "a minimalist polyglot cluster-enabled toolkit for building fast, decentralized, scalable and fault tolerant microservices",
   "main": "index.js",
   "scripts": {
@@ -31,17 +31,17 @@
   },
   "homepage": "https://github.com/nanopoly/nanopoly#readme",
   "devDependencies": {
-    "eslint": "^6.4.0",
+    "eslint": "^6.8.0",
     "eslint-config-airbnb-base": "^14.0.0",
-    "eslint-plugin-import": "^2.18.2",
+    "eslint-plugin-import": "^2.20.0",
     "jest": "^24.9.0",
-    "nanopoly-nanomsg": "^0.3.0",
-    "nanopoly-zeromq": "^0.3.0",
-    "redis-mock": "^0.46.0"
+    "nanopoly-nanomsg": "^0.3.2",
+    "nanopoly-zeromq": "^0.3.2",
+    "redis-mock": "^0.47.0"
   },
   "dependencies": {
     "is_js": "^0.9.0",
-    "pino": "^5.13.4",
+    "pino": "^5.16.0",
     "shortid": "^2.2.15"
   },
   "jest": {
