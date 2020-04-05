@@ -6,7 +6,7 @@ class Service {
     }
 
     static _delay() {
-        return new Promise(resolve => setTimeout(resolve, 3000));
+        return new Promise((resolve) => setTimeout(resolve, 3000));
     }
 
     static async echo(m) {

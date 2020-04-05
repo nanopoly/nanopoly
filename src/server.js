@@ -28,12 +28,16 @@ class Server extends Base {
      * @memberof Server
      */
     addService(publisher, subscriber, service) {
-        if (is.not.function(service)) throw new Error('service must be a class');
+        if (is.not.function(service))
+            throw new Error('service must be a class');
 
         const name = this._fixServiceName(service);
         const options = Object.assign({}, this._options.plugin || {});
         options.prefix = this._prefix(name);
-        this._services[name] = { s: new this._ServerPlugin(publisher, subscriber, options), c: service };
+        this._services[name] = {
+            s: new this._ServerPlugin(publisher, subscriber, options),
+            c: service,
+        };
     }
 
     /**
@@ -44,12 +48,24 @@ class Server extends Base {
      */
     async _onMessage(m) {
         const { s: service, m: method, id } = m;
-        if (is.not.string(service) || is.not.string(method) || is.not.string(id)) throw new Error('invalid message');
-        else if (!this._services[service]) throw new Error(`unknown service(${ service })`);
-        else if (method.startsWith('_') || is.not.function(this._services[service].c[method]))
-            throw new Error(`invalid method(${ method })`);
-        else if (this._services[service].c[method].constructor.name !== 'AsyncFunction')
-            throw new Error(`invalid method(${ method })`);
+        if (
+            is.not.string(service) ||
+            is.not.string(method) ||
+            is.not.string(id)
+        )
+            throw new Error('invalid message');
+        else if (!this._services[service])
+            throw new Error(`unknown service(${service})`);
+        else if (
+            method.startsWith('_') ||
+            is.not.function(this._services[service].c[method])
+        )
+            throw new Error(`invalid method(${method})`);
+        else if (
+            this._services[service].c[method].constructor.name !==
+            'AsyncFunction'
+        )
+            throw new Error(`invalid method(${method})`);
 
         return await this._services[service].c[method](m);
     }
@@ -61,7 +77,8 @@ class Server extends Base {
     start() {
         if (is.empty(this._services)) throw new Error('there is no service');
 
-        for (let name in this._services) this._services[name].s.start(async m => this._onMessage(m));
+        for (let name in this._services)
+            this._services[name].s.start(async (m) => this._onMessage(m));
     }
 }
 

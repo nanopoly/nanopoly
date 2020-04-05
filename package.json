@@ -1,50 +1,50 @@
 {
-  "name": "nanopoly",
-  "version": "0.5.1",
-  "description": "a minimalist polyglot cluster-enabled toolkit for building fast, decentralized, scalable and fault tolerant microservices",
-  "main": "index.js",
-  "scripts": {
-    "coverage": "./node_modules/.bin/jest --coverage",
-    "test": "./node_modules/.bin/jest"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/nanopoly/nanopoly.git"
-  },
-  "keywords": [
-    "microservices",
-    "soa",
-    "rpc",
-    "zeromq",
-    "zmq",
-    "Ømq",
-    "service registry",
-    "service discovery"
-  ],
-  "engines": {
-    "node": ">=v6.14.4"
-  },
-  "author": "Umut Aydin",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/nanopoly/nanopoly/issues"
-  },
-  "homepage": "https://github.com/nanopoly/nanopoly#readme",
-  "devDependencies": {
-    "eslint": "^6.8.0",
-    "eslint-config-airbnb-base": "^14.0.0",
-    "eslint-plugin-import": "^2.20.0",
-    "jest": "^24.9.0",
-    "nanopoly-nanomsg": "^0.3.2",
-    "nanopoly-zeromq": "^0.3.2",
-    "redis-mock": "^0.47.0"
-  },
-  "dependencies": {
-    "is_js": "^0.9.0",
-    "pino": "^5.16.0",
-    "shortid": "^2.2.15"
-  },
-  "jest": {
-    "testEnvironment": "node"
-  }
+    "name": "nanopoly",
+    "version": "0.5.3",
+    "description": "a minimalist polyglot cluster-enabled toolkit for building fast, decentralized, scalable and fault tolerant microservices",
+    "main": "index.js",
+    "scripts": {
+        "coverage": "./node_modules/.bin/jest --coverage",
+        "test": "./node_modules/.bin/jest"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/nanopoly/nanopoly.git"
+    },
+    "keywords": [
+        "microservices",
+        "soa",
+        "rpc",
+        "zeromq",
+        "zmq",
+        "Ømq",
+        "service registry",
+        "service discovery"
+    ],
+    "engines": {
+        "node": ">=v6.14.4"
+    },
+    "author": "Umut Aydin",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/nanopoly/nanopoly/issues"
+    },
+    "homepage": "https://github.com/nanopoly/nanopoly#readme",
+    "devDependencies": {
+        "eslint": "^6.8.0",
+        "eslint-config-airbnb-base": "^14.1.0",
+        "eslint-plugin-import": "^2.20.2",
+        "jest": "^25.2.7",
+        "nanopoly-nanomsg": "^0.3.4",
+        "nanopoly-zeromq": "^0.3.4",
+        "redis-mock": "^0.49.0"
+    },
+    "dependencies": {
+        "is_js": "^0.9.0",
+        "pino": "^6.1.1",
+        "shortid": "^2.2.15"
+    },
+    "jest": {
+        "testEnvironment": "node"
+    }
 }

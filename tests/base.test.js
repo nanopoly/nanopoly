@@ -3,8 +3,7 @@
 const Base = require('../lib/base');
 const Plugin = require('nanopoly-zeromq');
 
-class Service {
-}
+class Service {}
 
 class Service2 {
     static _name() {
